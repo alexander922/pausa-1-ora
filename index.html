@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orario · promemoria pause</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,480;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12151a;
+    --surface: #1b2029;
+    --surface-2: #222836;
+    --line: #333c4a;
+    --text: #edeef0;
+    --text-dim: #8b93a1;
+    --work: #7fa98c;
+    --work-dim: #446352;
+    --break: #e8a33d;
+    --break-dim: #7a5a22;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 50% -10%, #1a2028 0%, #12151a 55%);
+    color: var(--text);
+    font-family: "Inter", sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 32px 16px;
+  }
+  main{
+    width:100%;
+    max-width: 420px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap: 28px;
+  }
+  .eyebrow{
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-align:center;
+  }
+  h1{
+    font-family:"Fraunces", serif;
+    font-weight:480;
+    font-size: 26px;
+    margin: 2px 0 0 0;
+    text-align:center;
+  }
+  .dial-wrap{
+    position:relative;
+    width: 260px;
+    height: 260px;
+  }
+  svg{ width:100%; height:100%; display:block; }
+  .track{ stroke: var(--surface-2); }
+  .arc-work{ stroke: var(--work-dim); }
+  .arc-break{ stroke: var(--break-dim); }
+  .marker{ stroke: var(--text); stroke-width: 3; }
+  .dial-center{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap: 6px;
+    text-align:center;
+  }
+  .phase-label{
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight:600;
+    transition: color .3s ease;
+  }
+  .phase-label.work{ color: var(--work); }
+  .phase-label.break{ color: var(--break); }
+  .countdown{
+    font-family:"Fraunces", serif;
+    font-weight: 480;
+    font-size: 44px;
+    font-variant-numeric: tabular-nums;
+    line-height:1;
+  }
+  .sub{
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .panel{
+    width:100%;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display:flex;
+    flex-direction:column;
+    gap: 16px;
+  }
+  .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 12px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex:1;
+  }
+  .field label{
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:.08em;
+  }
+  .field input{
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: inherit;
+    width:100%;
+  }
+  .field input:disabled{ opacity: .5; }
+  .buttons{
+    display:flex;
+    gap: 10px;
+  }
+  button{
+    font-family: inherit;
+    font-size: 14px;
+    font-weight:600;
+    border-radius: 9px;
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor:pointer;
+    flex:1;
+    transition: transform .15s ease, background .2s ease;
+  }
+  button:hover{ background:#2a3140; }
+  button:active{ transform: scale(0.97); }
+  button.primary{
+    background: var(--work);
+    border-color: var(--work);
+    color: #10160f;
+  }
+  button.primary:hover{ background:#8fb99b; }
+  button.danger{
+    background: transparent;
+  }
+  .notif-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+  .notif-status{
+    display:flex; align-items:center; gap:6px;
+  }
+  .dot{ width:8px; height:8px; border-radius:50%; background:#555; }
+  .dot.on{ background: var(--work); }
+  .dot.off{ background: var(--break); }
+  .notif-btn{
+    flex:none;
+    padding: 8px 12px;
+    font-size:13px;
+  }
+  footer{
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align:center;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <div class="eyebrow">promemoria pause</div>
+    <h1>Ogni ora, dieci minuti</h1>
+  </div>
+
+  <div class="dial-wrap">
+    <svg viewBox="0 0 260 260">
+      <g transform="rotate(-90 130 130)">
+        <circle class="track" cx="130" cy="130" r="110" fill="none" stroke-width="10"/>
+        <circle id="arcWork" class="arc-work" cx="130" cy="130" r="110" fill="none" stroke-width="10" stroke-linecap="round"/>
+        <circle id="arcBreak" class="arc-break" cx="130" cy="130" r="110" fill="none" stroke-width="10" stroke-linecap="round"/>
+        <line id="marker" class="marker" x1="130" y1="130" x2="130" y2="26" stroke-linecap="round"/>
+      </g>
+      <circle cx="130" cy="130" r="3" fill="var(--text)"/>
+    </svg>
+    <div class="dial-center">
+      <div id="phaseLabel" class="phase-label work">al lavoro</div>
+      <div id="countdown" class="countdown">60:00</div>
+      <div id="subLabel" class="sub">manca alla pausa</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="notif-row">
+      <div class="notif-status">
+        <span id="notifDot" class="dot off"></span>
+        <span id="notifText">Notifiche disattivate</span>
+      </div>
+      <button id="notifBtn" class="notif-btn">Attiva notifiche</button>
+    </div>
+  </div>
+
+  <footer>
+    Le notifiche funzionano finché questa pagina resta aperta in una scheda del browser (anche in background), non se il browser è chiuso.
+  </footer>
+</main>
+
+<script>
+  const WORK_MIN = 60;
+  const BREAK_MIN = 10;
+  const notifBtn = document.getElementById('notifBtn');
+  const notifDot = document.getElementById('notifDot');
+  const notifText = document.getElementById('notifText');
+  const countdownEl = document.getElementById('countdown');
+  const phaseLabelEl = document.getElementById('phaseLabel');
+  const subLabelEl = document.getElementById('subLabel');
+  const arcWork = document.getElementById('arcWork');
+  const arcBreak = document.getElementById('arcBreak');
+  const marker = document.getElementById('marker');
+
+  const R = 110;
+  const CIRC = 2 * Math.PI * R;
+  const STORAGE_KEY = 'break-timer-cycle-start-TEST';
+  // --- MODALITÀ TEST: 10 secondi di lavoro + 10 secondi di pausa ---
+  // Per tornare al ciclo reale (60 min lavoro + 10 min pausa) sostituisci
+  // le due righe qui sotto con: const CYCLE_MS = (60 + 10) * 60000; const WORK_MS = 60 * 60000;
+  const CYCLE_MS = 20 * 1000;
+  const WORK_MS = 10 * 1000;
+
+  // Il ciclo parte una sola volta, la prima volta che la pagina viene aperta,
+  // e da quel momento gira per sempre: non si può mettere in pausa né riazzerare.
+  let cycleStart = Number(localStorage.getItem(STORAGE_KEY));
+  if(!cycleStart){
+    cycleStart = Date.now();
+    localStorage.setItem(STORAGE_KEY, String(cycleStart));
+  }
+
+  let lastPhase = null;
+
+  function fmt(ms){
+    const totalSec = Math.max(0, Math.ceil(ms/1000));
+    const m = Math.floor(totalSec/60);
+    const s = totalSec % 60;
+    return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  function applyDial(){
+    const workLen = CIRC * (WORK_MS / CYCLE_MS);
+    const breakLen = CIRC * ((CYCLE_MS - WORK_MS) / CYCLE_MS);
+    arcWork.setAttribute('stroke-dasharray', `${workLen} ${CIRC - workLen}`);
+    arcWork.setAttribute('stroke-dashoffset', '0');
+    arcBreak.setAttribute('stroke-dasharray', `${breakLen} ${CIRC - breakLen}`);
+    arcBreak.setAttribute('stroke-dashoffset', `${-workLen}`);
+  }
+
+  function notify(title, body){
+    if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
+      try{ new Notification(title, { body }); }catch(e){}
+    }
+  }
+
+  function updateNotifUI(){
+    const perm = (typeof Notification !== 'undefined') ? Notification.permission : 'unsupported';
+    if(perm === 'granted'){
+      notifDot.className = 'dot on';
+      notifText.textContent = 'Notifiche attive';
+      notifBtn.style.display = 'none';
+    } else if(perm === 'denied'){
+      notifDot.className = 'dot off';
+      notifText.textContent = 'Notifiche bloccate dal browser';
+      notifBtn.style.display = 'none';
+    } else {
+      notifDot.className = 'dot off';
+      notifText.textContent = 'Notifiche disattivate';
+      notifBtn.style.display = 'inline-block';
+    }
+  }
+
+  notifBtn.addEventListener('click', () => {
+    if(typeof Notification === 'undefined') return;
+    Notification.requestPermission().then(updateNotifUI);
+  });
+
+  function tick(){
+    const elapsed = (Date.now() - cycleStart) % CYCLE_MS;
+    const inWork = elapsed < WORK_MS;
+    const phase = inWork ? 'work' : 'break';
+
+    if(lastPhase !== null && lastPhase !== phase){
+      if(phase === 'break'){
+        notify('Pausa! ☕', 'È passata un\'ora: stacca dalla tecnologia per 10 minuti.');
+      } else {
+        notify('Si torna al lavoro', 'La pausa è finita, si riparte.');
+      }
+    }
+    lastPhase = phase;
+
+    const remaining = inWork ? (WORK_MS - elapsed) : (CYCLE_MS - elapsed);
+
+    countdownEl.textContent = fmt(remaining);
+    phaseLabelEl.textContent = inWork ? 'al lavoro' : 'in pausa';
+    phaseLabelEl.className = 'phase-label ' + phase;
+    subLabelEl.textContent = inWork ? 'manca alla pausa' : 'manca alla ripresa';
+
+    document.title = fmt(remaining) + ' · ' + (inWork ? 'Al lavoro' : 'In pausa');
+
+    const angle = (elapsed / CYCLE_MS) * 360;
+    marker.setAttribute('transform', `rotate(${angle} 130 130)`);
+  }
+
+  applyDial();
+  updateNotifUI();
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
