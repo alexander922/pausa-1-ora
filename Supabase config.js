@@ -1,0 +1,3 @@
+// Configurazione del progetto Supabase "pausa-tech", già creato e pronto.
+const SUPABASE_URL = "https://tcfuvbsqalscdvqwpqjl.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjZnV2YnNxYWxzY2R2cXdwcWpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0OTU5MTUsImV4cCI6MjEwMzA3MTkxNX0.yq9Ccm3zFMuDzkB61qhSEsjuWydShQc17gCovxr29fw";
