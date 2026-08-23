@@ -178,6 +178,19 @@
     padding: 8px 12px;
     font-size:13px;
   }
+  a.notif-btn{
+    font-family: inherit;
+    font-weight:600;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    transition: background .2s ease;
+  }
+  a.notif-btn:hover{ background:#2a3140; }
   footer{
     font-size: 11px;
     color: var(--text-dim);
@@ -204,7 +217,7 @@
       <circle cx="130" cy="130" r="3" fill="var(--text)"/>
     </svg>
     <div class="dial-center">
-      <div id="phaseLabel" class="phase-label work">al lavoro</div>
+      <div id="phaseLabel" class="phase-label work">tempo libero</div>
       <div id="countdown" class="countdown">60:00</div>
       <div id="subLabel" class="sub">manca alla pausa</div>
     </div>
@@ -218,13 +231,22 @@
       </div>
       <button id="notifBtn" class="notif-btn">Attiva notifiche</button>
     </div>
+    <div class="notif-row">
+      <div class="notif-status">
+        <span id="syncDot" class="dot off"></span>
+        <span id="syncText">Connessione al centro di controllo…</span>
+      </div>
+      <a class="notif-btn" href="control.html" style="text-decoration:none;">Apri centro di controllo</a>
+    </div>
   </div>
 
   <footer>
-    Le notifiche funzionano finché questa pagina resta aperta in una scheda del browser (anche in background), non se il browser è chiuso.
+    Aprendo questo sito su più dispositivi, tutti restano sincronizzati automaticamente sulla stessa fase, senza bisogno di collegarli tra loro. Le notifiche funzionano solo mentre la pagina resta aperta e attiva in primo piano su quel dispositivo.
   </footer>
 </main>
 
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js"></script>
 <script>
   const WORK_MIN = 60;
   const BREAK_MIN = 10;
@@ -240,17 +262,14 @@
 
   const R = 110;
   const CIRC = 2 * Math.PI * R;
-  const STORAGE_KEY = 'break-timer-cycle-start-v2';
   const CYCLE_MS = (60 + 10) * 60000;
   const WORK_MS = 60 * 60000;
 
-  // Il ciclo parte una sola volta, la prima volta che la pagina viene aperta,
-  // e da quel momento gira per sempre: non si può mettere in pausa né riazzerare.
-  let cycleStart = Number(localStorage.getItem(STORAGE_KEY));
-  if(!cycleStart){
-    cycleStart = Date.now();
-    localStorage.setItem(STORAGE_KEY, String(cycleStart));
-  }
+  // Il ciclo è ancorato all'orario reale (non a quando apri la pagina):
+  // così, aprendo questo stesso sito su più dispositivi, tutti mostrano
+  // automaticamente la stessa fase e lo stesso countdown, sincronizzati
+  // tra loro senza bisogno di alcuna connessione o permesso.
+  const cycleStart = 0;
 
   let lastPhase = null;
 
@@ -307,7 +326,7 @@
       if(phase === 'break'){
         notify('Pausa! ☕', 'È passata un\'ora: stacca dalla tecnologia per 10 minuti.');
       } else {
-        notify('Si torna al tempo libero!!!', 'La pausa è finita!!!');
+        notify('Pausa finita', 'Puoi tornare a usare la tecnologia.');
       }
     }
     lastPhase = phase;
@@ -315,11 +334,11 @@
     const remaining = inWork ? (WORK_MS - elapsed) : (CYCLE_MS - elapsed);
 
     countdownEl.textContent = fmt(remaining);
-    phaseLabelEl.textContent = inWork ? 'al lavoro' : 'in pausa';
+    phaseLabelEl.textContent = inWork ? 'tempo libero' : 'in pausa';
     phaseLabelEl.className = 'phase-label ' + phase;
     subLabelEl.textContent = inWork ? 'manca alla pausa' : 'manca alla ripresa';
 
-    document.title = fmt(remaining) + ' · ' + (inWork ? 'Al lavoro' : 'In pausa');
+    document.title = fmt(remaining) + ' · ' + (inWork ? 'Tempo libero' : 'In pausa');
 
     const angle = (elapsed / CYCLE_MS) * 360;
     marker.setAttribute('transform', `rotate(${angle} 130 130)`);
@@ -329,6 +348,125 @@
   updateNotifUI();
   tick();
   setInterval(tick, 1000);
+
+  // --- Centro di controllo: identità del dispositivo e sincronizzazione ---
+  const syncDot = document.getElementById('syncDot');
+  const syncText = document.getElementById('syncText');
+
+  let deviceId = localStorage.getItem('pausa-device-id');
+  if(!deviceId){
+    deviceId = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()));
+    localStorage.setItem('pausa-device-id', deviceId);
+  }
+  let deviceName = localStorage.getItem('pausa-device-name');
+  if(!deviceName){
+    deviceName = prompt('Come vuoi chiamare questo dispositivo? (es. "Telefono", "PC ufficio")') || 'Dispositivo senza nome';
+    localStorage.setItem('pausa-device-name', deviceName);
+  }
+
+  // Rileva sistema operativo e, se il browser lo espone, il modello del
+  // dispositivo (funziona in modo affidabile solo su Chrome/Android:
+  // Safari, Firefox e la maggior parte dei desktop non lo condividono).
+  function guessOS(){
+    const ua = navigator.userAgent;
+    if(/Windows/.test(ua)) return 'Windows';
+    if(/Android/.test(ua)) return 'Android';
+    if(/iPhone|iPad|iPod/.test(ua)) return 'iOS';
+    if(/Mac OS X/.test(ua)) return 'macOS';
+    if(/Linux/.test(ua)) return 'Linux';
+    return 'Sconosciuto';
+  }
+
+  async function getDeviceInfo(){
+    let os = guessOS();
+    let model = null;
+    if(navigator.userAgentData && navigator.userAgentData.getHighEntropyValues){
+      try{
+        const hints = await navigator.userAgentData.getHighEntropyValues(['model','platform']);
+        if(hints.model) model = hints.model;
+        if(hints.platform) os = hints.platform;
+      }catch(e){}
+    }
+    return { os, model };
+  }
+
+  let deviceInfo = { os: guessOS(), model: null };
+  getDeviceInfo().then(info => { deviceInfo = info; });
+
+  let sb = null;
+  try{
+    if(SUPABASE_URL && SUPABASE_URL !== 'INCOLLA_QUI'){
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      syncDot.className = 'dot on';
+      syncText.textContent = 'Connesso come "' + deviceName + '"';
+    } else {
+      syncDot.className = 'dot off';
+      syncText.textContent = 'Supabase non configurato';
+    }
+  }catch(e){
+    syncDot.className = 'dot off';
+    syncText.textContent = 'Errore di connessione';
+  }
+
+  // Rileva attività reale sul dispositivo (mouse, tastiera, tocco, scroll)
+  let lastActivityAt = Date.now();
+  ['mousemove','keydown','touchstart','scroll','click'].forEach(evt => {
+    window.addEventListener(evt, () => { lastActivityAt = Date.now(); }, { passive:true });
+  });
+
+  let complianceChecked = false;
+
+  async function pushDeviceState(phase, compliant){
+    if(!sb) return;
+    const row = {
+      id: deviceId,
+      name: deviceName,
+      phase: phase,
+      os: deviceInfo.os,
+      model: deviceInfo.model,
+      updated_at: new Date().toISOString()
+    };
+    if(compliant !== undefined) row.compliant = compliant;
+    await sb.from('devices').upsert(row);
+  }
+
+  async function checkComplianceAfterBreakStart(){
+    // 10 secondi dopo l'inizio della pausa: se c'è ancora attività,
+    // segnala il dispositivo come "attivo durante la pausa" al pannello.
+    const stillActive = (Date.now() - lastActivityAt) < 10000;
+    if(stillActive){
+      await pushDeviceState('break', false);
+      if(sb){
+        await sb.from('alerts').insert({
+          device_id: deviceId,
+          type: 'activity',
+          message: 'Attività rilevata durante la pausa'
+        });
+      }
+    } else {
+      await pushDeviceState('break', true);
+    }
+  }
+
+  function syncTick(){
+    const elapsed = (Date.now() - cycleStart) % CYCLE_MS;
+    const inWork = elapsed < WORK_MS;
+    const phase = inWork ? 'work' : 'break';
+
+    if(phase === 'break' && !complianceChecked){
+      complianceChecked = true;
+      pushDeviceState('break');
+      setTimeout(checkComplianceAfterBreakStart, 10000);
+    } else if(phase === 'work'){
+      if(complianceChecked) complianceChecked = false;
+      pushDeviceState('work', true);
+    }
+  }
+
+  if(sb){
+    syncTick();
+    setInterval(syncTick, 5000);
+  }
 </script>
 </body>
 </html>
