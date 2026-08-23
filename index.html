@@ -240,12 +240,9 @@
 
   const R = 110;
   const CIRC = 2 * Math.PI * R;
-  const STORAGE_KEY = 'break-timer-cycle-start-TEST';
-  // --- MODALITÀ TEST: 10 secondi di lavoro + 10 secondi di pausa ---
-  // Per tornare al ciclo reale (60 min lavoro + 10 min pausa) sostituisci
-  // le due righe qui sotto con: const CYCLE_MS = (60 + 10) * 60000; const WORK_MS = 60 * 60000;
-  const CYCLE_MS = 20 * 1000;
-  const WORK_MS = 10 * 1000;
+  const STORAGE_KEY = 'break-timer-cycle-start-v2';
+  const CYCLE_MS = (60 + 10) * 60000;
+  const WORK_MS = 60 * 60000;
 
   // Il ciclo parte una sola volta, la prima volta che la pagina viene aperta,
   // e da quel momento gira per sempre: non si può mettere in pausa né riazzerare.
@@ -310,7 +307,7 @@
       if(phase === 'break'){
         notify('Pausa! ☕', 'È passata un\'ora: stacca dalla tecnologia per 10 minuti.');
       } else {
-        notify('Si torna al lavoro', 'La pausa è finita, si riparte.');
+        notify('Si torna al tempo libero!!!', 'La pausa è finita!!!');
       }
     }
     lastPhase = phase;
