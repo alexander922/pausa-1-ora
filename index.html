@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Orario · promemoria pause</title>
+<title>Pausa dalla tecnologia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,340;9..144,480;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -19,6 +19,8 @@
     --work-dim: #446352;
     --break: #e8a33d;
     --break-dim: #7a5a22;
+    --alert: #e0644f;
+    --alert-dim: #5c2c24;
   }
   *{ box-sizing: border-box; }
   html,body{ height:100%; }
@@ -29,17 +31,20 @@
     color: var(--text);
     font-family: "Inter", sans-serif;
     display:flex;
-    align-items:center;
     justify-content:center;
     padding: 32px 16px;
   }
-  main{
+  .hidden{ display:none !important; }
+
+  /* ---------- timer ---------- */
+  #timerScreen{
     width:100%;
     max-width: 420px;
     display:flex;
     flex-direction:column;
     align-items:center;
     gap: 28px;
+    margin: 0 auto;
   }
   .eyebrow{
     font-size: 12px;
@@ -102,63 +107,6 @@
     flex-direction:column;
     gap: 16px;
   }
-  .row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap: 12px;
-  }
-  .field{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    flex:1;
-  }
-  .field label{
-    font-size: 11px;
-    color: var(--text-dim);
-    text-transform:uppercase;
-    letter-spacing:.08em;
-  }
-  .field input{
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    color: var(--text);
-    padding: 8px 10px;
-    font-size: 14px;
-    font-family: inherit;
-    width:100%;
-  }
-  .field input:disabled{ opacity: .5; }
-  .buttons{
-    display:flex;
-    gap: 10px;
-  }
-  button{
-    font-family: inherit;
-    font-size: 14px;
-    font-weight:600;
-    border-radius: 9px;
-    padding: 11px 14px;
-    border: 1px solid var(--line);
-    background: var(--surface-2);
-    color: var(--text);
-    cursor:pointer;
-    flex:1;
-    transition: transform .15s ease, background .2s ease;
-  }
-  button:hover{ background:#2a3140; }
-  button:active{ transform: scale(0.97); }
-  button.primary{
-    background: var(--work);
-    border-color: var(--work);
-    color: #10160f;
-  }
-  button.primary:hover{ background:#8fb99b; }
-  button.danger{
-    background: transparent;
-  }
   .notif-row{
     display:flex;
     align-items:center;
@@ -177,8 +125,6 @@
     flex:none;
     padding: 8px 12px;
     font-size:13px;
-  }
-  a.notif-btn{
     font-family: inherit;
     font-weight:600;
     border-radius: 9px;
@@ -186,21 +132,170 @@
     background: var(--surface-2);
     color: var(--text);
     cursor:pointer;
-    display:inline-flex;
-    align-items:center;
     transition: background .2s ease;
   }
-  a.notif-btn:hover{ background:#2a3140; }
+  .notif-btn:hover{ background:#2a3140; }
   footer{
     font-size: 11px;
     color: var(--text-dim);
     text-align:center;
     line-height:1.5;
   }
+
+  /* ---------- centro di controllo ---------- */
+  #controlLoginScreen{
+    width:100%;
+    max-width: 340px;
+    margin: 0 auto;
+    display:flex;
+    flex-direction:column;
+    gap: 20px;
+    align-items:center;
+    text-align:center;
+  }
+  #controlLoginScreen .panel{
+    gap: 14px;
+  }
+  #controlLoginScreen input{
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    color: var(--text);
+    padding: 12px 14px;
+    font-size: 18px;
+    letter-spacing: 0.15em;
+    text-align:center;
+    font-family: inherit;
+  }
+  #controlLoginScreen .primary-btn{
+    font-family: inherit;
+    font-size: 14px;
+    font-weight:600;
+    border-radius: 9px;
+    padding: 11px 14px;
+    border: 1px solid var(--work);
+    background: var(--work);
+    color: #10160f;
+    cursor:pointer;
+  }
+  #loginError{
+    font-size: 12px;
+    color: var(--alert);
+    min-height: 16px;
+  }
+
+  #controlMainScreen{
+    width:100%;
+    max-width: 560px;
+    margin: 0 auto;
+    display:flex;
+    flex-direction:column;
+    gap: 24px;
+  }
+  .top{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+  }
+  a.back, button.back{
+    font-size: 13px;
+    color: var(--text-dim);
+    text-decoration:none;
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+    border-radius: 9px;
+    background: transparent;
+    font-family: inherit;
+    cursor:pointer;
+  }
+  a.back:hover, button.back:hover{ background: var(--surface-2); }
+  #empty{
+    color: var(--text-dim);
+    font-size: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 24px;
+    text-align:center;
+  }
+  .device{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 14px;
+  }
+  .device.alert{ border-color: var(--alert); }
+  .device-info{ display:flex; flex-direction:column; gap: 4px; min-width:0; }
+  .device-name{
+    font-weight:600; font-size:15px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .device-meta{ font-size:12px; color: var(--text-dim); }
+  .device-meta.alert-text{ color: var(--alert); }
+  .badge{
+    flex:none; font-size: 12px; font-weight:600;
+    padding: 6px 12px; border-radius: 999px;
+    text-transform:uppercase; letter-spacing:.05em;
+  }
+  .badge.work{ background: var(--work-dim); color: var(--work); }
+  .badge.break{ background: var(--break-dim); color: var(--break); }
+  .badge.offline{ background: var(--surface-2); color: var(--text-dim); }
+  .list{ display:flex; flex-direction:column; gap: 12px; }
+  .section-title{
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--text-dim); margin: 4px 0 -6px 2px;
+  }
+  .history-item{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display:flex; align-items:center; justify-content:space-between; gap: 12px;
+  }
+  .history-item.lockout{ border-color: var(--alert); }
+  .history-msg{ font-size: 13px; color: var(--text); }
+  .history-time{ font-size: 11px; color: var(--text-dim); flex:none; white-space:nowrap; }
+  .settings-panel{
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 20px;
+    display:flex; flex-direction:column; gap: 12px;
+  }
+  .settings-panel input{
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    width:100%;
+  }
+  .settings-panel button{
+    font-family: inherit; font-size: 14px; font-weight:600;
+    border-radius: 9px; padding: 11px 14px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor:pointer;
+  }
+  .settings-panel button:hover{ background:#2a3140; }
+  .settings-feedback{ font-size: 12px; min-height: 16px; }
+  .settings-feedback.ok{ color: var(--work); }
+  .settings-feedback.err{ color: var(--alert); }
+  footer.control-footer{ margin-top: 4px; }
 </style>
 </head>
 <body>
-<main>
+
+<!-- ===== vista: timer ===== -->
+<main id="timerScreen">
   <div>
     <div class="eyebrow">promemoria pause</div>
     <h1>Ogni ora, dieci minuti</h1>
@@ -236,20 +331,119 @@
         <span id="syncDot" class="dot off"></span>
         <span id="syncText">Connessione al centro di controllo…</span>
       </div>
-      <a class="notif-btn" href="control.html" style="text-decoration:none;">Apri centro di controllo</a>
+      <button id="openControlBtn" class="notif-btn">Apri centro di controllo</button>
     </div>
   </div>
 
   <footer>
-    Aprendo questo sito su più dispositivi, tutti restano sincronizzati automaticamente sulla stessa fase, senza bisogno di collegarli tra loro. Le notifiche funzionano solo mentre la pagina resta aperta e attiva in primo piano su quel dispositivo.
+    Le notifiche funzionano solo mentre questa pagina resta aperta e attiva in primo piano su quel dispositivo. Aprendo questo sito su più dispositivi, tutti restano sincronizzati automaticamente sulla stessa fase.
+  </footer>
+</main>
+
+<!-- ===== vista: login centro di controllo ===== -->
+<div id="controlLoginScreen" class="hidden">
+  <div>
+    <div class="eyebrow">centro di controllo</div>
+    <h1>Accesso tutore</h1>
+  </div>
+  <div class="panel">
+    <input id="passwordInput" type="password" inputmode="numeric" placeholder="Password" maxlength="12">
+    <button id="loginBtn" class="primary-btn">Entra</button>
+    <div id="loginError"></div>
+  </div>
+  <button id="backFromLoginBtn" class="back">← Torna al timer</button>
+</div>
+
+<!-- ===== vista: pannello centro di controllo ===== -->
+<main id="controlMainScreen" class="hidden">
+  <div class="top">
+    <div>
+      <div class="eyebrow">centro di controllo</div>
+      <h1>Dispositivi connessi</h1>
+    </div>
+    <button id="backFromPanelBtn" class="back">← Torna al timer</button>
+  </div>
+
+  <div id="empty">In attesa di dispositivi… apri il timer su un dispositivo per vederlo comparire qui.</div>
+  <div id="list" class="list"></div>
+
+  <div class="section-title">Cronologia</div>
+  <div id="historyEmpty" class="history-item" style="color:var(--text-dim);">Nessun evento registrato finora.</div>
+  <div id="historyList" class="list"></div>
+
+  <div class="section-title">Sicurezza</div>
+  <div class="settings-panel">
+    <input id="currentPwdInput" type="password" inputmode="numeric" placeholder="Password attuale" maxlength="12">
+    <input id="newPwdInput" type="password" inputmode="numeric" placeholder="Nuova password" maxlength="12">
+    <button id="changePwdBtn">Aggiorna password</button>
+    <div id="changePwdFeedback" class="settings-feedback"></div>
+  </div>
+
+  <footer class="control-footer">
+    Un dispositivo risulta "disconnesso" se non aggiorna il suo stato da più di 15 secondi. Ricevi una notifica su questo pannello quando: un dispositivo resta attivo oltre 10 secondi dopo l'inizio di una pausa, un dispositivo già noto non ha il sito aperto tra le 10:00 e le 22:00, o dopo 3 tentativi di accesso falliti al pannello. Le pause regolari (inizio/fine) non generano notifiche qui: restano una scelta tua.
   </footer>
 </main>
 
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <script src="supabase-config.js"></script>
 <script>
+  /* ============================================================
+     CONFIGURAZIONE CONDIVISA
+     ============================================================ */
   const WORK_MIN = 60;
   const BREAK_MIN = 10;
+  const CYCLE_MS = (60 + 10) * 60000;
+  const WORK_MS = 60 * 60000;
+  const R = 110;
+  const CIRC = 2 * Math.PI * R;
+
+  const sb = (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL && SUPABASE_URL !== 'INCOLLA_QUI')
+    ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+    : null;
+
+  // Il ciclo è ancorato all'orario reale (non a quando apri la pagina):
+  // così, aprendo questo stesso sito su più dispositivi, tutti mostrano
+  // automaticamente la stessa fase e lo stesso countdown, sincronizzati
+  // tra loro senza bisogno di alcuna connessione o permesso.
+  const cycleStart = 0;
+
+  /* ============================================================
+     VISTE: passaggio tra timer e centro di controllo (stessa pagina)
+     ============================================================ */
+  const timerScreen = document.getElementById('timerScreen');
+  const controlLoginScreen = document.getElementById('controlLoginScreen');
+  const controlMainScreen = document.getElementById('controlMainScreen');
+
+  function showTimer(){
+    timerScreen.classList.remove('hidden');
+    controlLoginScreen.classList.add('hidden');
+    controlMainScreen.classList.add('hidden');
+  }
+  function showControlLogin(){
+    timerScreen.classList.add('hidden');
+    controlMainScreen.classList.add('hidden');
+    controlLoginScreen.classList.remove('hidden');
+  }
+  function showControlMain(){
+    timerScreen.classList.add('hidden');
+    controlLoginScreen.classList.add('hidden');
+    controlMainScreen.classList.remove('hidden');
+  }
+
+  document.getElementById('openControlBtn').addEventListener('click', () => {
+    if(sb && sessionStorage.getItem('admin-authed') === 'true'){
+      showControlMain();
+      startPanel();
+    } else {
+      showControlLogin();
+    }
+  });
+  document.getElementById('backFromLoginBtn').addEventListener('click', showTimer);
+  document.getElementById('backFromPanelBtn').addEventListener('click', showTimer);
+
+  /* ============================================================
+     TIMER: quadrante, countdown, notifiche personali
+     ============================================================ */
   const notifBtn = document.getElementById('notifBtn');
   const notifDot = document.getElementById('notifDot');
   const notifText = document.getElementById('notifText');
@@ -259,17 +453,6 @@
   const arcWork = document.getElementById('arcWork');
   const arcBreak = document.getElementById('arcBreak');
   const marker = document.getElementById('marker');
-
-  const R = 110;
-  const CIRC = 2 * Math.PI * R;
-  const CYCLE_MS = (60 + 10) * 60000;
-  const WORK_MS = 60 * 60000;
-
-  // Il ciclo è ancorato all'orario reale (non a quando apri la pagina):
-  // così, aprendo questo stesso sito su più dispositivi, tutti mostrano
-  // automaticamente la stessa fase e lo stesso countdown, sincronizzati
-  // tra loro senza bisogno di alcuna connessione o permesso.
-  const cycleStart = 0;
 
   let lastPhase = null;
 
@@ -349,7 +532,9 @@
   tick();
   setInterval(tick, 1000);
 
-  // --- Centro di controllo: identità del dispositivo e sincronizzazione ---
+  /* ============================================================
+     IDENTITÀ DISPOSITIVO E SINCRONIZZAZIONE CON SUPABASE
+     ============================================================ */
   const syncDot = document.getElementById('syncDot');
   const syncText = document.getElementById('syncText');
 
@@ -364,9 +549,6 @@
     localStorage.setItem('pausa-device-name', deviceName);
   }
 
-  // Rileva sistema operativo e, se il browser lo espone, il modello del
-  // dispositivo (funziona in modo affidabile solo su Chrome/Android:
-  // Safari, Firefox e la maggior parte dei desktop non lo condividono).
   function guessOS(){
     const ua = navigator.userAgent;
     if(/Windows/.test(ua)) return 'Windows';
@@ -393,19 +575,12 @@
   let deviceInfo = { os: guessOS(), model: null };
   getDeviceInfo().then(info => { deviceInfo = info; });
 
-  let sb = null;
-  try{
-    if(SUPABASE_URL && SUPABASE_URL !== 'INCOLLA_QUI'){
-      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      syncDot.className = 'dot on';
-      syncText.textContent = 'Connesso come "' + deviceName + '"';
-    } else {
-      syncDot.className = 'dot off';
-      syncText.textContent = 'Supabase non configurato';
-    }
-  }catch(e){
+  if(sb){
+    syncDot.className = 'dot on';
+    syncText.textContent = 'Connesso come "' + deviceName + '"';
+  } else {
     syncDot.className = 'dot off';
-    syncText.textContent = 'Errore di connessione';
+    syncText.textContent = 'Supabase non configurato';
   }
 
   // Rileva attività reale sul dispositivo (mouse, tastiera, tocco, scroll)
@@ -431,8 +606,6 @@
   }
 
   async function checkComplianceAfterBreakStart(){
-    // 10 secondi dopo l'inizio della pausa: se c'è ancora attività,
-    // segnala il dispositivo come "attivo durante la pausa" al pannello.
     const stillActive = (Date.now() - lastActivityAt) < 10000;
     if(stillActive){
       await pushDeviceState('break', false);
@@ -466,6 +639,268 @@
   if(sb){
     syncTick();
     setInterval(syncTick, 5000);
+  }
+
+  /* ============================================================
+     CENTRO DI CONTROLLO
+     ============================================================ */
+  const passwordInput = document.getElementById('passwordInput');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginError = document.getElementById('loginError');
+  const emptyEl = document.getElementById('empty');
+  const listEl = document.getElementById('list');
+  const historyEmpty = document.getElementById('historyEmpty');
+  const historyList = document.getElementById('historyList');
+  const currentPwdInput = document.getElementById('currentPwdInput');
+  const newPwdInput = document.getElementById('newPwdInput');
+  const changePwdBtn = document.getElementById('changePwdBtn');
+  const changePwdFeedback = document.getElementById('changePwdFeedback');
+
+  const OFFLINE_AFTER_MS = 15000;
+  const OPEN_HOURS_START = 10; // 10:00
+  const OPEN_HOURS_END = 22;   // 22:00
+
+  let devicesById = {};
+  let history = [];
+  let offlineNotified = {};
+  let panelStarted = false;
+
+  function timeAgo(ts){
+    if(!ts) return 'mai';
+    const s = Math.floor((Date.now() - ts) / 1000);
+    if(s < 5) return 'adesso';
+    if(s < 60) return s + ' secondi fa';
+    const m = Math.floor(s/60);
+    return m + ' minut' + (m===1 ? 'o' : 'i') + ' fa';
+  }
+
+  function deviceLine(d){
+    const parts = [];
+    if(d.os) parts.push(d.os);
+    if(d.model) parts.push(d.model);
+    return parts.join(' · ') || 'dispositivo sconosciuto';
+  }
+
+  function renderDevices(){
+    const ids = Object.keys(devicesById);
+    if(ids.length === 0){
+      emptyEl.style.display = 'block';
+      listEl.innerHTML = '';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    listEl.innerHTML = ids.map(id => {
+      const d = devicesById[id];
+      const updatedAt = d.updated_at ? new Date(d.updated_at).getTime() : 0;
+      const isOffline = (Date.now() - updatedAt) > OFFLINE_AFTER_MS;
+      const isAlert = (d.compliant === false && !isOffline) || isOffline;
+
+      let badgeClass = 'offline';
+      let badgeText = 'disconnesso';
+      if(!isOffline){
+        badgeClass = d.phase === 'break' ? 'break' : 'work';
+        badgeText = d.phase === 'break' ? 'in pausa' : 'tempo libero';
+      }
+
+      let metaText = deviceLine(d) + ' · aggiornato ' + timeAgo(updatedAt);
+      if(d.compliant === false && !isOffline) metaText = 'Attivo durante la pausa · ' + metaText;
+
+      const name = (d.name || 'Dispositivo senza nome').replace(/</g,'&lt;');
+
+      return `
+        <div class="device ${isAlert ? 'alert' : ''}">
+          <div class="device-info">
+            <div class="device-name">${name}</div>
+            <div class="device-meta ${isAlert ? 'alert-text' : ''}">${metaText}</div>
+          </div>
+          <div class="badge ${badgeClass}">${badgeText}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function alertTitle(a){
+    if(a.type === 'login_lockout') return 'Pannello';
+    const d = devicesById[a.device_id];
+    return (d && d.name) || 'Dispositivo';
+  }
+
+  function renderHistory(){
+    if(history.length === 0){
+      historyEmpty.style.display = 'flex';
+      historyList.innerHTML = '';
+      return;
+    }
+    historyEmpty.style.display = 'none';
+    historyList.innerHTML = history.map(a => {
+      const isLockout = a.type === 'login_lockout';
+      const when = a.created_at ? timeAgo(new Date(a.created_at).getTime()) : '';
+      const name = alertTitle(a).replace(/</g,'&lt;');
+      return `
+        <div class="history-item ${isLockout ? 'lockout' : ''}">
+          <div class="history-msg"><strong>${name}</strong> — ${a.message}</div>
+          <div class="history-time">${when}</div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function loadDevices(){
+    const { data, error } = await sb.from('devices').select('*');
+    if(!error && data){
+      devicesById = {};
+      data.forEach(d => { devicesById[d.id] = d; });
+      renderDevices();
+    }
+  }
+
+  async function loadHistory(){
+    const { data, error } = await sb.from('alerts').select('*').order('created_at', { ascending:false }).limit(20);
+    if(!error && data){
+      history = data;
+      renderHistory();
+    }
+  }
+
+  function notifyGuardian(title, body){
+    if(typeof Notification !== 'undefined' && Notification.permission === 'granted'){
+      try{ new Notification(title, { body }); }catch(e){}
+    }
+  }
+
+  function checkOpenHoursCompliance(){
+    const hour = new Date().getHours();
+    const withinOpenHours = hour >= OPEN_HOURS_START && hour < OPEN_HOURS_END;
+    if(!withinOpenHours) return;
+
+    Object.keys(devicesById).forEach(id => {
+      const d = devicesById[id];
+      const updatedAt = d.updated_at ? new Date(d.updated_at).getTime() : 0;
+      const isOffline = (Date.now() - updatedAt) > OFFLINE_AFTER_MS;
+
+      if(isOffline && !offlineNotified[id]){
+        offlineNotified[id] = true;
+        notifyGuardian('Sito non aperto ⚠️', (d.name || 'Un dispositivo') + ' non ha il sito aperto (fascia 10:00–22:00).');
+        if(sb){
+          sb.from('alerts').insert({
+            device_id: id,
+            type: 'offline',
+            message: 'Sito non aperto durante la fascia 10:00–22:00'
+          });
+        }
+      } else if(!isOffline && offlineNotified[id]){
+        offlineNotified[id] = false;
+      }
+    });
+  }
+
+  function startPanel(){
+    if(panelStarted) return;
+    panelStarted = true;
+
+    loadDevices();
+    loadHistory();
+
+    sb.channel('devices-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, payload => {
+        if(payload.eventType === 'DELETE'){
+          delete devicesById[payload.old.id];
+        } else {
+          devicesById[payload.new.id] = payload.new;
+        }
+        renderDevices();
+      })
+      .subscribe();
+
+    // Le notifiche di violazione arrivano solo qui, al pannello: non ai dispositivi.
+    sb.channel('alerts-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'alerts' }, payload => {
+        const a = payload.new;
+        history = [a, ...history].slice(0, 20);
+        renderHistory();
+
+        if(a.type === 'login_lockout'){
+          notifyGuardian('Accesso pannello ⚠️', a.message);
+          return;
+        }
+        const d = devicesById[a.device_id];
+        const name = (d && d.name) || 'Un dispositivo';
+        if(a.type === 'offline'){
+          notifyGuardian('Sito non aperto ⚠️', name + ' non ha il sito aperto (fascia 10:00–22:00).');
+        } else {
+          notifyGuardian('Pausa non rispettata ⚠️', name + ' è ancora attivo dopo l\'inizio della pausa.');
+        }
+      })
+      .subscribe();
+
+    if(typeof Notification !== 'undefined' && Notification.permission !== 'granted' && Notification.permission !== 'denied'){
+      Notification.requestPermission();
+    }
+
+    setInterval(() => { renderDevices(); checkOpenHoursCompliance(); }, 5000);
+  }
+
+  async function tryLogin(){
+    const pwd = passwordInput.value.trim();
+    if(!pwd || !sb){ return; }
+    loginBtn.disabled = true;
+    loginError.textContent = '';
+    try{
+      const { data, error } = await sb.functions.invoke('verify-admin-password', { body: { password: pwd } });
+      if(error || !data || !data.valid){
+        loginError.textContent = 'Password errata.';
+        loginBtn.disabled = false;
+        return;
+      }
+      sessionStorage.setItem('admin-authed', 'true');
+      showControlMain();
+      startPanel();
+    }catch(e){
+      loginError.textContent = 'Errore di connessione, riprova.';
+      loginBtn.disabled = false;
+    }
+  }
+
+  loginBtn.addEventListener('click', tryLogin);
+  passwordInput.addEventListener('keydown', e => { if(e.key === 'Enter') tryLogin(); });
+
+  async function tryChangePassword(){
+    const current = currentPwdInput.value.trim();
+    const next = newPwdInput.value.trim();
+    changePwdFeedback.className = 'settings-feedback';
+    changePwdFeedback.textContent = '';
+
+    if(!current || !next){
+      changePwdFeedback.className = 'settings-feedback err';
+      changePwdFeedback.textContent = 'Compila entrambi i campi.';
+      return;
+    }
+    changePwdBtn.disabled = true;
+    try{
+      const { data, error } = await sb.functions.invoke('verify-admin-password', {
+        body: { password: current, newPassword: next }
+      });
+      if(error || !data || !data.valid){
+        changePwdFeedback.className = 'settings-feedback err';
+        changePwdFeedback.textContent = 'Password attuale errata.';
+      } else {
+        changePwdFeedback.className = 'settings-feedback ok';
+        changePwdFeedback.textContent = 'Password aggiornata.';
+        currentPwdInput.value = '';
+        newPwdInput.value = '';
+      }
+    }catch(e){
+      changePwdFeedback.className = 'settings-feedback err';
+      changePwdFeedback.textContent = 'Errore di connessione, riprova.';
+    }
+    changePwdBtn.disabled = false;
+  }
+
+  changePwdBtn.addEventListener('click', tryChangePassword);
+
+  if(!sb){
+    loginError.textContent = 'Supabase non è configurato.';
   }
 </script>
 </body>
