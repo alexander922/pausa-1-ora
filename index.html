@@ -338,6 +338,7 @@
   <footer>
     Le notifiche funzionano solo mentre questa pagina resta aperta e attiva in primo piano su quel dispositivo. Aprendo questo sito su più dispositivi, tutti restano sincronizzati automaticamente sulla stessa fase.
   </footer>
+  <a class="back" href="mailto:alexanderpellati16@gmail.com">Assistenza</a>
 </main>
 
 <!-- ===== vista: login centro di controllo ===== -->
@@ -349,6 +350,7 @@
   <div class="panel">
     <input id="passwordInput" type="password" inputmode="numeric" placeholder="Password" maxlength="12">
     <button id="loginBtn" class="primary-btn">Entra</button>
+    <button id="biometricLoginBtn" class="back hidden">Sblocca con impronta / Face ID</button>
     <div id="loginError"></div>
   </div>
   <button id="backFromLoginBtn" class="back">← Torna al timer</button>
@@ -379,14 +381,27 @@
     <div id="changePwdFeedback" class="settings-feedback"></div>
   </div>
 
+  <div class="settings-panel">
+    <div id="biometricStatus" class="device-meta">Verifico stato biometria…</div>
+    <button id="registerBiometricBtn" class="hidden">Attiva biometria su questo dispositivo</button>
+    <button id="resetBiometricBtn" class="hidden">Reimposta biometria</button>
+    <div id="biometricFeedback" class="settings-feedback"></div>
+  </div>
+
   <footer class="control-footer">
     Un dispositivo risulta "disconnesso" se non aggiorna il suo stato da più di 15 secondi. Ricevi una notifica su questo pannello quando: un dispositivo resta attivo oltre 10 secondi dopo l'inizio di una pausa, un dispositivo già noto non ha il sito aperto tra le 10:00 e le 22:00, o dopo 3 tentativi di accesso falliti al pannello. Le pause regolari (inizio/fine) non generano notifiche qui: restano una scelta tua.
   </footer>
+  <a class="back" href="mailto:alexanderpellati16@gmail.com" style="text-align:center;">Assistenza</a>
 </main>
 
-<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-<script src="supabase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  /* ============================================================
+     CONFIGURAZIONE SUPABASE (progetto "pausa-tech", org "The futuring ORG")
+     ============================================================ */
+  const SUPABASE_URL = "https://tcfuvbsqalscdvqwpqjl.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjZnV2YnNxYWxzY2R2cXdwcWpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc0OTU5MTUsImV4cCI6MjEwMzA3MTkxNX0.yq9Ccm3zFMuDzkB61qhSEsjuWydShQc17gCovxr29fw";
+
   /* ============================================================
      CONFIGURAZIONE CONDIVISA
      ============================================================ */
@@ -397,9 +412,14 @@
   const R = 110;
   const CIRC = 2 * Math.PI * R;
 
-  const sb = (typeof SUPABASE_URL !== 'undefined' && SUPABASE_URL && SUPABASE_URL !== 'INCOLLA_QUI')
-    ? supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-    : null;
+  let sb = null;
+  try{
+    if(SUPABASE_URL && SUPABASE_URL !== 'INCOLLA_QUI' && typeof supabase !== 'undefined'){
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
+  }catch(e){
+    sb = null;
+  }
 
   // Il ciclo è ancorato all'orario reale (non a quando apri la pagina):
   // così, aprendo questo stesso sito su più dispositivi, tutti mostrano
@@ -655,6 +675,11 @@
   const newPwdInput = document.getElementById('newPwdInput');
   const changePwdBtn = document.getElementById('changePwdBtn');
   const changePwdFeedback = document.getElementById('changePwdFeedback');
+  const biometricLoginBtn = document.getElementById('biometricLoginBtn');
+  const biometricStatus = document.getElementById('biometricStatus');
+  const registerBiometricBtn = document.getElementById('registerBiometricBtn');
+  const resetBiometricBtn = document.getElementById('resetBiometricBtn');
+  const biometricFeedback = document.getElementById('biometricFeedback');
 
   const OFFLINE_AFTER_MS = 15000;
   const OPEN_HOURS_START = 10; // 10:00
@@ -801,6 +826,7 @@
 
     loadDevices();
     loadHistory();
+    refreshBiometricPanel();
 
     sb.channel('devices-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'devices' }, payload => {
@@ -850,7 +876,7 @@
       const { data, error } = await sb.functions.invoke('verify-admin-password', { body: { password: pwd } });
       if(error || !data || !data.valid){
         loginError.textContent = (data && data.locked)
-          ? 'Troppi tentativi: riprova tra un minuto.'
+          ? 'Troppi tentativi: riprova tra 10 minuti.'
           : 'Password errata.';
         loginBtn.disabled = false;
         return;
@@ -866,6 +892,164 @@
 
   loginBtn.addEventListener('click', tryLogin);
   passwordInput.addEventListener('keydown', e => { if(e.key === 'Enter') tryLogin(); });
+
+  /* ============================================================
+     BIOMETRIA (WebAuthn): impronta / Face ID legati a questo telefono.
+     Solo il primo dispositivo che la configura può usarla: la chiave
+     resta nel suo hardware, nessun altro dispositivo può replicarla.
+     ============================================================ */
+  function bufToBase64Url(buf){
+    const bytes = new Uint8Array(buf);
+    let str = '';
+    for(const b of bytes) str += String.fromCharCode(b);
+    return btoa(str).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+
+  const webAuthnSupported = !!(window.PublicKeyCredential && navigator.credentials);
+
+  async function refreshBiometricStatus(){
+    if(!sb) return { biometricRegistered:false };
+    try{
+      const { data } = await sb.functions.invoke('verify-admin-password', { body: { action:'status' } });
+      return data || { biometricRegistered:false };
+    }catch(e){
+      return { biometricRegistered:false };
+    }
+  }
+
+  // Mostra il pulsante "Sblocca con biometria" in login solo se supportata e già configurata
+  (async () => {
+    if(!webAuthnSupported) return;
+    const status = await refreshBiometricStatus();
+    if(status.biometricRegistered){
+      biometricLoginBtn.classList.remove('hidden');
+    }
+  })();
+
+  biometricLoginBtn.addEventListener('click', async () => {
+    loginError.textContent = '';
+    try{
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rpId: location.hostname,
+          userVerification: 'required',
+          timeout: 60000
+        }
+      });
+      const credentialId = bufToBase64Url(assertion.rawId);
+      const { data, error } = await sb.functions.invoke('verify-admin-password', { body: { credentialId } });
+      if(error || !data || !data.valid){
+        loginError.textContent = (data && data.locked) ? 'Troppi tentativi: riprova tra 10 minuti.' : 'Biometria non riconosciuta.';
+        return;
+      }
+      sessionStorage.setItem('admin-authed', 'true');
+      showControlMain();
+      startPanel();
+    }catch(e){
+      loginError.textContent = 'Sblocco biometrico annullato o non riuscito.';
+    }
+  });
+
+  async function refreshBiometricPanel(){
+    if(!webAuthnSupported){
+      biometricStatus.textContent = 'Questo browser non supporta la biometria.';
+      return;
+    }
+    const status = await refreshBiometricStatus();
+    if(status.biometricRegistered){
+      biometricStatus.textContent = 'Configurata su: ' + (status.biometricDeviceName || 'un dispositivo');
+      registerBiometricBtn.classList.add('hidden');
+      resetBiometricBtn.classList.remove('hidden');
+    } else {
+      biometricStatus.textContent = 'Non ancora configurata su nessun dispositivo.';
+      registerBiometricBtn.classList.remove('hidden');
+      resetBiometricBtn.classList.add('hidden');
+    }
+  }
+
+  registerBiometricBtn.addEventListener('click', async () => {
+    biometricFeedback.className = 'settings-feedback';
+    biometricFeedback.textContent = '';
+    const currentPwd = currentPwdInput.value.trim();
+    if(!currentPwd){
+      biometricFeedback.className = 'settings-feedback err';
+      biometricFeedback.textContent = 'Inserisci la password attuale qui sopra per confermare.';
+      return;
+    }
+    try{
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'Pausa dalla tecnologia' },
+          user: {
+            id: crypto.getRandomValues(new Uint8Array(16)),
+            name: 'tutore',
+            displayName: 'Tutore'
+          },
+          pubKeyCredParams: [{ type:'public-key', alg:-7 }, { type:'public-key', alg:-257 }],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            residentKey: 'required',
+            requireResidentKey: true,
+            userVerification: 'required'
+          },
+          timeout: 60000,
+          attestation: 'none'
+        }
+      });
+      const credentialId = bufToBase64Url(cred.rawId);
+      const { data, error } = await sb.functions.invoke('verify-admin-password', {
+        body: {
+          password: currentPwd,
+          registerBiometric: { credentialId, deviceId, deviceName }
+        }
+      });
+      if(error || !data || !data.valid){
+        biometricFeedback.className = 'settings-feedback err';
+        biometricFeedback.textContent = 'Password errata.';
+      } else if(data.biometricReason === 'already_set'){
+        biometricFeedback.className = 'settings-feedback err';
+        biometricFeedback.textContent = 'La biometria è già configurata su un altro dispositivo.';
+      } else {
+        biometricFeedback.className = 'settings-feedback ok';
+        biometricFeedback.textContent = 'Biometria attivata su questo dispositivo.';
+        currentPwdInput.value = '';
+        refreshBiometricPanel();
+      }
+    }catch(e){
+      biometricFeedback.className = 'settings-feedback err';
+      biometricFeedback.textContent = 'Impossibile configurare la biometria su questo dispositivo/browser.';
+    }
+  });
+
+  resetBiometricBtn.addEventListener('click', async () => {
+    biometricFeedback.className = 'settings-feedback';
+    biometricFeedback.textContent = '';
+    const currentPwd = currentPwdInput.value.trim();
+    if(!currentPwd){
+      biometricFeedback.className = 'settings-feedback err';
+      biometricFeedback.textContent = 'Inserisci la password attuale qui sopra per confermare.';
+      return;
+    }
+    try{
+      const { data, error } = await sb.functions.invoke('verify-admin-password', {
+        body: { password: currentPwd, resetBiometric: true }
+      });
+      if(error || !data || !data.valid){
+        biometricFeedback.className = 'settings-feedback err';
+        biometricFeedback.textContent = 'Password errata.';
+      } else {
+        biometricFeedback.className = 'settings-feedback ok';
+        biometricFeedback.textContent = 'Biometria reimpostata: ora un dispositivo può configurarla di nuovo.';
+        currentPwdInput.value = '';
+        refreshBiometricPanel();
+      }
+    }catch(e){
+      biometricFeedback.className = 'settings-feedback err';
+      biometricFeedback.textContent = 'Errore di connessione, riprova.';
+    }
+  });
 
   async function tryChangePassword(){
     const current = currentPwdInput.value.trim();
