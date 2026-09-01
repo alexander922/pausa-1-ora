@@ -416,8 +416,11 @@
   try{
     if(SUPABASE_URL && SUPABASE_URL !== 'INCOLLA_QUI' && typeof supabase !== 'undefined'){
       sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    } else {
+      console.warn('Supabase non inizializzato: libreria caricata?', typeof supabase !== 'undefined');
     }
   }catch(e){
+    console.warn('Errore inizializzazione Supabase:', e);
     sb = null;
   }
 
@@ -869,7 +872,11 @@
 
   async function tryLogin(){
     const pwd = passwordInput.value.trim();
-    if(!pwd || !sb){ return; }
+    if(!pwd) return;
+    if(!sb){
+      loginError.textContent = 'Impossibile collegarsi al database: controlla la connessione internet e riprova (funziona solo se il sito è online, non aperto come file locale).';
+      return;
+    }
     loginBtn.disabled = true;
     loginError.textContent = '';
     try{
@@ -1086,7 +1093,7 @@
   changePwdBtn.addEventListener('click', tryChangePassword);
 
   if(!sb){
-    loginError.textContent = 'Supabase non è configurato.';
+    loginError.textContent = 'Impossibile collegarsi al database: controlla la connessione internet e riprova.';
   }
 </script>
 </body>
