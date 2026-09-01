@@ -849,7 +849,9 @@
     try{
       const { data, error } = await sb.functions.invoke('verify-admin-password', { body: { password: pwd } });
       if(error || !data || !data.valid){
-        loginError.textContent = 'Password errata.';
+        loginError.textContent = (data && data.locked)
+          ? 'Troppi tentativi: riprova tra un minuto.'
+          : 'Password errata.';
         loginBtn.disabled = false;
         return;
       }
